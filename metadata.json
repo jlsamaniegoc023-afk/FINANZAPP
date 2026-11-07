@@ -1,0 +1,6 @@
+{
+  "name": "FINANZAPP",
+  "description": "Plataforma inteligente de administración financiera personal para gestionar ingresos, gastos, presupuestos, cuentas, deudas, metas de ahorro e indicadores visuales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

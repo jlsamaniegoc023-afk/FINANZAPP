@@ -1,0 +1,44 @@
+language: node_js
+
+node_js:
+  - "22"
+
+services:
+  - docker
+
+cache:
+  directories:
+    - $HOME/.bun/install/cache
+
+env:
+  global:
+    - NODE_ENV=test
+    - JWT_SECRET=ci-only-secret-not-for-production
+    - PGHOST=127.0.0.1
+    - PGPORT=5432
+    - PGDATABASE=finanzapp
+    - PGUSER=finanzapp_user
+    - PGPASSWORD=finanzapp_ci_password
+    - PORT=3000
+    - APP_URL=http://localhost:3000
+
+before_install:
+  - curl -fsSL https://bun.sh/install | bash
+  - echo 'export PATH="$HOME/.bun/bin:$PATH"' >> "$BASH_ENV"
+  - export PATH="$HOME/.bun/bin:$PATH"
+  - docker run -d --name finanzapp-pg-ci -p 5432:5432 -e POSTGRES_DB=finanzapp -e POSTGRES_USER=finanzapp_user -e POSTGRES_PASSWORD=finanzapp_ci_password postgres:16-alpine
+  - for i in $(seq 1 30); do docker exec finanzapp-pg-ci pg_isready -U finanzapp_user -d finanzapp && break; sleep 2; done
+  - docker exec finanzapp-pg-ci pg_isready -U finanzapp_user -d finanzapp
+
+install:
+  - bun install --frozen-lockfile
+
+script:
+  - bun run lint
+  - bun run test
+  - bun run build
+  - docker compose config -q
+  - docker build -t finanzapp-app:ci .
+
+after_script:
+  - docker rm -f finanzapp-pg-ci || true

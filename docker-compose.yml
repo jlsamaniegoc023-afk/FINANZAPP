@@ -1,0 +1,58 @@
+﻿services:
+  finanzapp-db:
+    image: postgres:16-alpine
+    container_name: finanzapp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-finanzapp}
+      POSTGRES_USER: ${PGUSER:-finanzapp_user}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?Define_PGPASSWORD_en_.env}
+    volumes:
+      - finanzapp_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - finanzapp_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-finanzapp_user} -d ${PGDATABASE:-finanzapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  finanzapp-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finanzapp-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:?Define_JWT_SECRET_en_.env}
+      PGHOST: finanzapp-db
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE:-finanzapp}
+      PGUSER: ${PGUSER:-finanzapp_user}
+      PGPASSWORD: ${PGPASSWORD:?Define_PGPASSWORD_en_.env}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+    depends_on:
+      finanzapp-db:
+        condition: service_healthy
+    networks:
+      - finanzapp_internal
+      - finanzapp_gateway
+
+networks:
+  finanzapp_internal:
+    driver: bridge
+    internal: true
+  finanzapp_gateway:
+    driver: bridge
+
+volumes:
+  finanzapp_data:
+    name: finanzapp_data

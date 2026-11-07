@@ -1,0 +1,76 @@
+name: FINANZAPP - Integracion Continua
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Validacion y construccion FINANZAPP
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: finanzapp
+          POSTGRES_USER: finanzapp_user
+          POSTGRES_PASSWORD: finanzapp_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finanzapp_user -d finanzapp"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      APP_URL: http://localhost:3000
+      JWT_SECRET: ci-only-secret-not-for-production
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGDATABASE: finanzapp
+      PGUSER: finanzapp_user
+      PGPASSWORD: finanzapp_ci_password
+      GMAIL_USER: ""
+      GMAIL_APP_PASSWORD: ""
+      GEMINI_API_KEY: ""
+
+    steps:
+      - name: 1. Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Bun 1.4.4
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: 3. Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      - name: 4. Validar TypeScript
+        run: bun run lint
+
+      - name: 5. Ejecutar pruebas automatizadas API
+        run: bun run test
+
+      - name: 6. Construir frontend React y Vite
+        run: bun run build
+
+      - name: 7. Validar Docker Compose
+        run: docker compose config -q
+
+      - name: 8. Construir imagen Docker
+        run: docker build -t finanzapp-app:ci .
