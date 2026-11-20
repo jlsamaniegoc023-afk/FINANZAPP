@@ -4,7 +4,7 @@ pipeline {
   environment {
     NODE_ENV = 'test'
     JWT_SECRET = 'ci-only-secret-not-for-production'
-    PGHOST = '127.0.0.1'
+    PGHOST = 'finanzapp-pg-ci'
     PGPORT = '5432'
     PGDATABASE = 'finanzapp'
     PGUSER = 'finanzapp_user'
@@ -24,11 +24,14 @@ pipeline {
       steps {
         sh '''
           docker rm -f finanzapp-pg-ci 2>/dev/null || true
+
           docker run -d --name finanzapp-pg-ci \
+            --network finanzapp_finanzapp_internal \
+            --network-alias finanzapp-pg-ci \
             -e POSTGRES_DB=finanzapp \
             -e POSTGRES_USER=finanzapp_user \
             -e POSTGRES_PASSWORD=finanzapp_ci_password \
-            -p 5432:5432 postgres:16-alpine
+            postgres:16-alpine
 
           for i in $(seq 1 30); do
             if docker exec finanzapp-pg-ci pg_isready -U finanzapp_user -d finanzapp; then
@@ -37,7 +40,7 @@ pipeline {
             sleep 2
           done
 
-          echo "PostgreSQL no inició correctamente."
+          echo "PostgreSQL no inicio correctamente."
           exit 1
         '''
       }
