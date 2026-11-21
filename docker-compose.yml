@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: ${PGPASSWORD:?Define_PGPASSWORD_en_.env}
     volumes:
       - finanzapp_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      
     networks:
       - finanzapp_internal
     healthcheck:
