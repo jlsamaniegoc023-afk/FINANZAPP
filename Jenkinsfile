@@ -83,7 +83,7 @@ pipeline {
 
     stage('8. Construir imágenes Docker') {
       steps {
-        sh 'docker compose build finanzapp-app finanzapp-db'
+        sh 'docker compose -p finanzapp build finanzapp-app finanzapp-db'
       }
     }
 
