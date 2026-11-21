@@ -1,6 +1,10 @@
-﻿services:
+﻿
+services:
   finanzapp-db:
-    image: postgres:16-alpine
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    image: finanzapp-db:ci
     container_name: finanzapp-db
     restart: unless-stopped
     environment:
@@ -22,6 +26,7 @@
     build:
       context: .
       dockerfile: Dockerfile
+    image: finanzapp-app:ci
     container_name: finanzapp-app
     restart: unless-stopped
     ports:
@@ -56,3 +61,4 @@ networks:
 volumes:
   finanzapp_data:
     name: finanzapp_data
+
