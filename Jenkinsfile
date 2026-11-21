@@ -1,14 +1,18 @@
 pipeline {
   agent any
 
+  triggers {
+    pollSCM('H/5 * * * *')
+  }
+
   environment {
     NODE_ENV = 'test'
-    JWT_SECRET = 'ci-only-secret-not-for-production'
+    JWT_SECRET = credentials('finanzapp-ci-jwt-secret')
     PGHOST = 'finanzapp-pg-ci'
     PGPORT = '5432'
     PGDATABASE = 'finanzapp'
     PGUSER = 'finanzapp_user'
-    PGPASSWORD = 'finanzapp_ci_password'
+    PGPASSWORD = credentials('finanzapp-ci-db-password')
     PORT = '3000'
     APP_URL = 'http://localhost:3000'
   }
@@ -30,7 +34,7 @@ pipeline {
             --network-alias finanzapp-pg-ci \
             -e POSTGRES_DB=finanzapp \
             -e POSTGRES_USER=finanzapp_user \
-            -e POSTGRES_PASSWORD=finanzapp_ci_password \
+            -e POSTGRES_PASSWORD="$PGPASSWORD" \
             postgres:16-alpine
 
           for i in $(seq 1 30); do
