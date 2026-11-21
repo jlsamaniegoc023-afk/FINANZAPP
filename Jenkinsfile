@@ -1,3 +1,4 @@
+
 pipeline {
   agent any
 
@@ -80,9 +81,23 @@ pipeline {
       }
     }
 
-    stage('8. Construir imagen Docker') {
+    stage('8. Construir imágenes Docker') {
       steps {
-        sh 'docker build -t finanzapp-app:ci .'
+        sh 'docker compose build finanzapp-app finanzapp-db'
+      }
+    }
+
+    stage('9. Verificar imágenes Docker') {
+      steps {
+        sh '''
+          echo "Verificando imagen de la aplicacion..."
+          docker image inspect finanzapp-app:ci
+
+          echo "Verificando imagen de PostgreSQL..."
+          docker image inspect finanzapp-db:ci
+
+          echo "Imagenes Docker construidas y verificadas correctamente."
+        '''
       }
     }
   }
@@ -94,3 +109,4 @@ pipeline {
     }
   }
 }
+
